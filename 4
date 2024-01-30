@@ -1,0 +1,13 @@
+import stepic
+from PIL import Image
+text = input("Enter the message to be hidden: ")
+img = Image.open("Group.png")
+img_stegano = stepic.encode(img,text.encode())
+img_stegano.save("stegano.png")
+print("Succesfully completed")
+
+import stepic
+from PIL import Image
+img = Image.open('stegano.png')
+decoded =stepic.decode(img)
+print("Hidden Message is: ",str(decoded))
