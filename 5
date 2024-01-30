@@ -1,0 +1,30 @@
+drive = "\\\\.\\E:"   # Specify the drive to read (e.g., D:)
+fileD = open(drive, "rb")  # Open the drive as raw bytes in binary mode
+size = 512  # Size of bytes to read at a time
+byte = fileD.read(size)  # Read the first 'size' bytes
+offs = 0  # Offset location
+drec = False  # Recovery mode flag
+rcvd = 0  # Recovered file ID counter
+while byte:
+    # Search for the start of a JPEG file signature
+    found = byte.find(b'\xff\xd8\xff\xe0\x00\x10\x4a\x46')
+    if found >= 0:
+        drec = True  # Set recovery mode flag
+        print('==== Found JPG at location: ' + str(hex(found + (size * offs))) + ' ====')
+        fileN = open(str(rcvd) + '.jpg', "wb")  # Create a new file for recovered JPEG
+        fileN.write(byte[found:])  # Write the found bytes to the new file
+        while drec:
+            byte = fileD.read(size)  # Read 'size' bytes
+            bfind = byte.find(b'\xff\xd9')  # Search for the end of JPEG signature
+            if bfind >= 0:
+                fileN.write(byte[:bfind + 2])  # Write the bytes until the end of JPEG signature
+                fileD.seek((offs + 1) * size)  # Move the file pointer to the next block
+                print('==== Wrote JPG to location: ===' + str(rcvd) + '.jpg ====\n')
+                drec = False  # Exit recovery mode
+                rcvd += 1  # Increment the recovered file ID
+                fileN.close()  # Close the recovered file
+            else:
+                fileN.write(byte)  # Continue writing bytes to the recovered file
+    byte = fileD.read(size)  # Read the next 'size' bytes
+    offs += 1  # Increment the offset
+fileD.close()  # Close the raw drive file
